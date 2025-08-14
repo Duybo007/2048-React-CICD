@@ -2,8 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: 2048-app-deployment
-  labels:
-    app: 2048-app
+  namespace: default
 spec:
   replicas: 2
   selector:
@@ -17,53 +16,19 @@ spec:
       containers:
         - name: 2048-app-container
           image: duybo95/2048:latest
-          imagePullPolicy: Always
           ports:
             - containerPort: 3000
-              name: http
-          resources:
-            requests:
-              memory: "64Mi"
-              cpu: "250m"
-            limits:
-              memory: "128Mi"
-              cpu: "500m"
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-
-
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: v1
+kind: Service
 metadata:
-  name: game-2048-ingress
+  name: 2048-app-service
   namespace: default
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
-  rules:
-    - host: 2048.duyngo.xyz
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: 2048-app-service   # ✅ match Service name
-                port:
-                  number: 80
+  selector:
+    app: 2048-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
